@@ -7,9 +7,12 @@ import Stats from 'three/addons/libs/stats.module.js'
 import { GUI } from 'dat.gui'
 
 export default function CapybaraExperiment() {
-    const mountRef = useRef(null)
+    const mountRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
+        const currentMountRef = mountRef.current
+        if (!currentMountRef) return
+
         const scene = new THREE.Scene()
 
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
@@ -24,7 +27,7 @@ export default function CapybaraExperiment() {
 
         renderer.outputColorSpace = THREE.SRGBColorSpace
 
-        mountRef.current.appendChild(renderer.domElement)
+        currentMountRef.appendChild(renderer.domElement)
 
         const texture = new RGBELoader().load('../images/river.hdr', (texture) => {
             texture.mapping = THREE.EquirectangularRefractionMapping
@@ -43,11 +46,13 @@ export default function CapybaraExperiment() {
         const cube = new THREE.Mesh(geometry, material)
         scene.add(cube)
 
-        window.addEventListener('resize', () => {
+        const handleResize = () => {
             camera.aspect = window.innerWidth / window.innerHeight
             camera.updateProjectionMatrix()
             renderer.setSize(window.innerWidth, window.innerHeight)
-        })
+        }
+
+        window.addEventListener('resize', () => handleResize)
 
         new OrbitControls(camera, renderer.domElement)
 
@@ -81,8 +86,11 @@ export default function CapybaraExperiment() {
         animate()
 
         return () => {
+            if (currentMountRef) {
+                currentMountRef.removeChild(renderer.domElement)
+            }
+
             renderer.dispose()
-            mountRef.current.removeChild(renderer.domElement)
             window.removeEventListener('resize', handleResize)
         }
     }, [])
